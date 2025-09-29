@@ -150,5 +150,16 @@ public class PeladaController {
     }
 
     @DeleteMapping("/{id}")
-    public void deletar(@PathVariable int id) { repo.deletar(id); }
+    public ResponseEntity<?> deletar(@PathVariable int id) {
+        try {
+            System.out.println("Tentando excluir pelada com ID: " + id);
+            repo.deletar(id);
+            System.out.println("Pelada excluída com sucesso!");
+            return ResponseEntity.ok(Map.of("mensagem", "Pelada excluída com sucesso!"));
+        } catch (Exception e) {
+            System.err.println("Erro ao excluir pelada: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(400).body(Map.of("erro", "Erro ao excluir pelada: " + e.getMessage()));
+        }
+    }
 }
