@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   FaPlus,
@@ -25,6 +24,21 @@ interface Pelada {
   imagem?: string;
 }
 
+// Interface para dados vindos do backend
+interface PeladaBackend {
+  idPelada: number;
+  diaSemana: string;
+  horario: string;
+  valorTotal: number;
+  limiteMensalistas: number;
+  tempoConfMensalista?: number;
+  tempoConfDiarista?: number;
+  endereco?: {
+    rua?: string;
+    bairro?: string;
+  };
+}
+
 export default function PeladasPage() {
   const [peladas, setPeladas] = useState<Pelada[]>([]);
   const [busca, setBusca] = useState("");
@@ -34,17 +48,17 @@ export default function PeladasPage() {
   useEffect(() => {
     fetch("http://localhost:8080/api/peladas")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: PeladaBackend[]) => {
         setPeladas(
-          data.map((p: any) => ({
+          data.map((p: PeladaBackend) => ({
             id: p.idPelada,
-            nome: p.diaSemana || p.nome || "Pelada",
+            nome: p.diaSemana || "Pelada",
             endereco: p.endereco?.rua || "-",
             bairro: p.endereco?.bairro || "-",
             diaSemana: p.diaSemana,
             horario: p.horario,
-            duracao: p.duracao || "-",
-            jogadores: p.jogadores || 0,
+            duracao: "-",
+            jogadores: 0,
             limite: p.limiteMensalistas || 0,
             valor: p.valorTotal || 0,
             imagem: "/file.svg",
@@ -87,6 +101,22 @@ export default function PeladasPage() {
               />
             </svg>
             Minhas peladas
+          </button>
+          <button
+            className="text-blue-700 hover:text-blue-900 border border-blue-200 rounded px-3 py-1 bg-blue-50 text-sm font-semibold flex items-center gap-1"
+            onClick={() => router.push("/perfil/editar")}
+          >
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+              <path
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
+              />
+              <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+            </svg>
+            Meu Perfil
           </button>
           <a
             href="/peladas/nova"

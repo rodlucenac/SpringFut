@@ -19,12 +19,25 @@ public class AuthController {
         String email = body.get("email");
         String senha = body.get("senha");
         try {
-            String sql = "SELECT p.senha, j.idJogador FROM Pessoa p JOIN Jogador j ON j.idPessoa = p.idPessoa WHERE p.email = ?";
-            Map<String, Object> result = jdbc.queryForMap(sql, email);
-            String senhaDb = (String) result.get("senha");
-            Integer idJogador = (Integer) result.get("idJogador");
+            // Primeiro, buscar a pessoa
+            String sqlPessoa = "SELECT idPessoa, senha FROM Pessoa WHERE email = ?";
+            Map<String, Object> pessoa = jdbc.queryForMap(sqlPessoa, email);
+            String senhaDb = (String) pessoa.get("senha");
+            Integer idPessoa = (Integer) pessoa.get("idPessoa");
+            
             if (senhaDb != null && senhaDb.equals(senha)) { // Para produção, use hash!
-                return ResponseEntity.ok().body(Map.of("userId", idJogador));
+                // Verificar se existe jogador vinculado
+                String sqlJogador = "SELECT idJogador FROM Jogador WHERE idPessoa = ?";
+                try {
+                    Integer idJogador = jdbc.queryForObject(sqlJogador, Integer.class, idPessoa);
+                    return ResponseEntity.ok().body(Map.of("userId", idJogador));
+                } catch (Exception e) {
+                    // Se não existe jogador, criar automaticamente
+                    String sqlCriarJogador = "INSERT INTO Jogador (idPessoa) VALUES (?)";
+                    jdbc.update(sqlCriarJogador, idPessoa);
+                    Integer novoIdJogador = jdbc.queryForObject("SELECT LAST_INSERT_ID()", Integer.class);
+                    return ResponseEntity.ok().body(Map.of("userId", novoIdJogador));
+                }
             }
             return ResponseEntity.status(401).body(Map.of("erro", "Usuário ou senha inválidos"));
         } catch (Exception e) {
