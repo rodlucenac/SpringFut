@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function MinhasPeladasPage() {
-  const [peladas, setPeladas] = useState([]);
+  const [peladas, setPeladas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [peladaToDelete, setPeladaToDelete] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,6 +41,39 @@ export default function MinhasPeladasPage() {
       .catch((err) => setErro(err.message))
       .finally(() => setLoading(false));
   }, [router]);
+
+  const handleDelete = async () => {
+    if (!peladaToDelete) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/peladas/${peladaToDelete.id}`, {
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro ao excluir pelada: ${response.status} ${errorText}`);
+      }
+
+      // Remove a pelada da lista
+      setPeladas((prevPeladas: any[]) => {
+        return prevPeladas.filter((p: any) => p.id !== peladaToDelete.id);
+      });
+
+      // Fecha o modal
+      setShowDeleteModal(false);
+      setPeladaToDelete(null);
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao excluir pelada";
+      setErro(errorMessage);
+      setShowDeleteModal(false);
+      setPeladaToDelete(null);
+    }
+  };
 
   return (
     <main className="min-h-screen flex flex-col items-center bg-gradient-to-br from-green-100 via-green-50 to-white px-4">
@@ -93,23 +128,9 @@ export default function MinhasPeladasPage() {
                 </button>
                 <button
                   className="px-4 py-1 bg-red-100 text-red-700 rounded font-semibold border border-red-200 hover:bg-red-200 transition text-xs"
-                  onClick={async () => {
-                    if (
-                      confirm("Tem certeza que deseja excluir esta pelada?")
-                    ) {
-                      try {
-                        const res = await fetch(
-                          `http://localhost:8080/api/peladas/${pelada.id}`,
-                          { method: "DELETE" }
-                        );
-                        if (!res.ok) throw new Error("Erro ao excluir pelada");
-                        setPeladas(
-                          peladas.filter((p: any) => p.id !== pelada.id)
-                        );
-                      } catch (e: any) {
-                        setErro(e.message || "Erro ao excluir pelada");
-                      }
-                    }
+                  onClick={() => {
+                    setPeladaToDelete(pelada);
+                    setShowDeleteModal(true);
                   }}
                 >
                   Excluir
@@ -119,6 +140,37 @@ export default function MinhasPeladasPage() {
           ))}
         </div>
       </div>
+
+      {/* Modal de Confirmação */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Confirmar Exclusão
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Tem certeza que deseja excluir a pelada <strong>{peladaToDelete?.nome}</strong>? Esta ação não pode ser desfeita.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setPeladaToDelete(null);
+                }}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
