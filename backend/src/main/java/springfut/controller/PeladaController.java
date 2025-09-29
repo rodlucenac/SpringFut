@@ -52,6 +52,37 @@ public class PeladaController {
         }
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> buscarPorId(@PathVariable int id) {
+        try {
+            String sql = "SELECT p.*, e.rua, e.bairro FROM Pelada p " +
+                        "LEFT JOIN Endereco e ON p.idEndereco = e.idEndereco " +
+                        "WHERE p.idPelada = ?";
+            
+            List<Map<String, Object>> resultado = jdbc.query(sql, ps -> ps.setInt(1, id), (rs, rowNum) -> {
+                Map<String, Object> pelada = new java.util.HashMap<>();
+                pelada.put("idPelada", rs.getInt("idPelada"));
+                pelada.put("diaSemana", rs.getString("diaSemana"));
+                pelada.put("horario", rs.getTime("horario"));
+                pelada.put("valorTotal", rs.getDouble("valorTotal"));
+                pelada.put("limiteMensalistas", rs.getInt("limiteMensalistas"));
+                pelada.put("tempoConfMensalista", rs.getInt("tempoConfMensalista"));
+                pelada.put("tempoConfDiarista", rs.getInt("tempoConfDiarista"));
+                pelada.put("endereco", rs.getString("rua"));
+                pelada.put("bairro", rs.getString("bairro"));
+                return pelada;
+            });
+            
+            if (resultado.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            return ResponseEntity.ok(resultado.get(0));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("erro", "Erro ao buscar pelada: " + e.getMessage()));
+        }
+    }
+
     @GetMapping
     public List<Pelada> listar(@RequestParam(value = "organizadorId", required = false) Integer organizadorId) {
         if (organizadorId != null) {
@@ -75,8 +106,48 @@ public class PeladaController {
         }
     }
 
-    @PutMapping
-    public void atualizar(@RequestBody Pelada p) { repo.atualizar(p); }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> atualizar(@PathVariable int id, @RequestBody Map<String, Object> body) {
+        try {
+            String diaSemana = (String) body.getOrDefault("diaSemana", "");
+            String horario = (String) body.getOrDefault("horario", "");
+            int limiteMensalistas = (int) body.getOrDefault("limiteMensalistas", 20);
+            double valorTotal = Double.parseDouble(body.getOrDefault("valorTotal", 0).toString());
+            int organizadorId = Integer.parseInt(body.getOrDefault("organizadorId", 0).toString());
+
+            // Verificar se o usuário é o organizador da pelada
+            String sqlVerificacao = "SELECT COUNT(*) FROM VinculoJogadorPelada " +
+                                  "WHERE idPelada = ? AND idJogador = ? AND papelNaPelada = 'Organizador'";
+            int count = jdbc.queryForObject(sqlVerificacao, Integer.class, id, organizadorId);
+            
+            if (count == 0) {
+                return ResponseEntity.status(403).body(Map.of("erro", "Apenas o organizador pode editar esta pelada"));
+            }
+
+            // Atualizar pelada
+            String sqlPelada = "UPDATE Pelada SET diaSemana=?, horario=?, valorTotal=?, limiteMensalistas=? WHERE idPelada=?";
+            jdbc.update(sqlPelada, diaSemana, horario, valorTotal, limiteMensalistas, id);
+
+            // Atualizar endereço se fornecido
+            if (body.containsKey("endereco") || body.containsKey("bairro")) {
+                String endereco = (String) body.getOrDefault("endereco", "");
+                String bairro = (String) body.getOrDefault("bairro", "");
+                
+                // Buscar idEndereco da pelada
+                String sqlBuscarEndereco = "SELECT idEndereco FROM Pelada WHERE idPelada = ?";
+                Integer idEndereco = jdbc.queryForObject(sqlBuscarEndereco, Integer.class, id);
+                
+                if (idEndereco != null) {
+                    String sqlEndereco = "UPDATE Endereco SET rua=?, bairro=? WHERE idEndereco=?";
+                    jdbc.update(sqlEndereco, endereco, bairro, idEndereco);
+                }
+            }
+
+            return ResponseEntity.ok(Map.of("mensagem", "Pelada atualizada com sucesso!"));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("erro", "Erro ao atualizar pelada: " + e.getMessage()));
+        }
+    }
 
     @DeleteMapping("/{id}")
     public void deletar(@PathVariable int id) { repo.deletar(id); }
