@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   FaPlus,
@@ -124,9 +125,11 @@ export default function PeladasPage() {
           >
             <FaPlus /> Criar Pelada
           </a>
+          <Link href="/graficos" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow transition">
+            Gráficos
+          </Link>
         </div>
       </header>
-
       {/* Busca */}
       <div className="flex justify-center mt-8">
         <div className="w-full max-w-xl flex items-center bg-white rounded-lg shadow px-4 py-2 border border-gray-200">
