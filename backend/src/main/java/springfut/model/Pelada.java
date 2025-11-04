@@ -11,7 +11,7 @@ public class Pelada {
     private int tempoConfMensalista;
     private int tempoConfDiarista;
 
-    // Getters e Setters
+    
     public int getIdPelada() { return idPelada; }
     public void setIdPelada(int idPelada) { this.idPelada = idPelada; }
 

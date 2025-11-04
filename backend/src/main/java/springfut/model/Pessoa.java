@@ -8,7 +8,7 @@ public class Pessoa {
     private String email;
     private String senha;
 
-    // Getters e Setters
+    
     public int getIdPessoa() { return idPessoa; }
     public void setIdPessoa(int idPessoa) { this.idPessoa = idPessoa; }
 

@@ -61,11 +61,11 @@ public class PessoaController {
     @PutMapping("/jogador/{idJogador}")
     public ResponseEntity<?> atualizarPorIdJogador(@PathVariable int idJogador, @RequestBody Pessoa pessoa) {
         try {
-            // Primeiro buscar o idPessoa do jogador
+            
             String sqlIdPessoa = "SELECT idPessoa FROM Jogador WHERE idJogador = ?";
             Integer idPessoa = jdbc.queryForObject(sqlIdPessoa, Integer.class, idJogador);
             
-            // Setar o idPessoa correto e atualizar
+           
             pessoa.setIdPessoa(idPessoa);
             repo.atualizar(pessoa);
             return ResponseEntity.ok(Map.of("mensagem", "Perfil atualizado com sucesso!"));
