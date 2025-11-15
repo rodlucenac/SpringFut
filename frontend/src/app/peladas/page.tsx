@@ -106,19 +106,24 @@ export default function PeladasPage() {
       .then((res) => res.json())
       .then((data: PeladaBackend[]) => {
         setPeladas(
-          data.map((p: PeladaBackend) => ({
-            id: p.idPelada,
-            nome: p.diaSemana || "Pelada",
-            endereco: p.endereco?.rua || "-",
-            bairro: p.endereco?.bairro || "-",
-            diaSemana: p.diaSemana,
-            horario: p.horario,
-            duracao: "-",
-            jogadores: 0,
-            limite: p.limiteMensalistas || 0,
-            valor: p.valorTotal || 0,
-            imagem: "/file.svg",
-          }))
+          data
+            .sort((a, b) => b.idPelada - a.idPelada)
+            .map((p: PeladaBackend) => ({
+              id: p.idPelada,
+              nome:
+                (p as unknown as { nome?: string }).nome?.trim() ||
+                p.diaSemana ||
+                `Pelada ${p.idPelada}`,
+              endereco: p.endereco?.rua || "-",
+              bairro: p.endereco?.bairro || "-",
+              diaSemana: p.diaSemana,
+              horario: p.horario,
+              duracao: "-",
+              jogadores: 0,
+              limite: p.limiteMensalistas || 0,
+              valor: p.valorTotal || 0,
+              imagem: "/campo.svg",
+            }))
         );
         setLoading(false);
       })
@@ -501,53 +506,57 @@ export default function PeladasPage() {
             peladasFiltradas.map((p) => (
               <div
                 key={p.id}
-                className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-100"
+                className="bg-white rounded-3xl shadow-lg p-6 mb-8 border border-gray-100"
               >
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-bold text-gray-800">{p.nome}</h2>
-                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-semibold">
-                    Open
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-gray-900 flex items-center gap-2">
+                      {p.nome}
+                    </h2>
+                    <p className="text-sm text-gray-500">Pelada #{p.id}</p>
+                  </div>
+                  <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">
+                    Aberta
                   </span>
                 </div>
                 <div className="flex flex-col md:flex-row gap-6">
-                  <img
-                    src={p.imagem}
-                    alt={p.nome}
-                    className="w-full md:w-64 h-40 object-cover rounded-xl border border-gray-200 bg-gray-100"
-                  />
+                  <div className="relative w-full md:w-72">
+                    <img
+                      src={p.imagem}
+                      alt={`Campo da pelada ${p.nome}`}
+                      className="w-full h-48 object-cover rounded-2xl border border-emerald-100 shadow-inner"
+                    />
+                    <div className="absolute bottom-3 left-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full flex items-center gap-2">
+                      <FaCalendarAlt /> {p.diaSemana} • {p.horario}
+                    </div>
+                  </div>
                   <div className="flex-1 flex flex-col justify-between">
-                    <div className="mb-2">
-                      <div className="flex items-center gap-2 text-green-700 text-sm mb-1">
-                        <FaMapMarkerAlt />
-                        <span>{p.endereco}</span>
-                        <span className="text-gray-400">{p.bairro}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2 text-green-700 text-sm">
+                        <FaMapMarkerAlt className="text-xl" />
+                        <div>
+                          <p className="font-semibold text-gray-800">{p.endereco}</p>
+                          <p className="text-gray-500 text-xs">{p.bairro}</p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-gray-600 text-sm mb-1">
-                        <span className="flex items-center gap-1">
-                          <FaCalendarAlt /> {p.diaSemana}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FaCalendarAlt /> {p.horario} • {p.duracao}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600 text-sm mb-2">
+                      <div className="flex items-center gap-2 text-gray-600 text-sm">
                         <FaUsers />
                         <span>
-                          {p.jogadores}/{p.limite} players
+                          {p.jogadores}/{p.limite} jogadores
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-                        <div
-                          className="h-full bg-green-500"
-                          style={{
-                            width: `${p.limite ? (p.jogadores / p.limite) * 100 : 0}%`,
-                          }}
-                        />
-                      </div>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden my-4">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-400 to-green-600"
+                        style={{
+                          width: `${p.limite ? Math.min((p.jogadores / p.limite) * 100, 100) : 0}%`,
+                        }}
+                      />
                     </div>
                     <div className="flex items-end justify-between mt-2">
                       <div>
-                        <span className="text-xl font-bold text-gray-800">
+                        <span className="text-2xl font-bold text-gray-900">
                           R$ {p.valor.toFixed(2)}
                         </span>
                         <span className="text-gray-400 text-sm ml-1">
@@ -556,7 +565,7 @@ export default function PeladasPage() {
                       </div>
                       <button
                         type="button"
-                        className="px-5 py-2 bg-green-50 border border-green-600 text-green-700 font-bold rounded-lg hover:bg-green-100 transition text-sm"
+                        className="px-6 py-3 bg-green-600 text-white font-bold rounded-2xl shadow hover:bg-green-700 transition text-sm"
                         onClick={() => handleInscreverClick(p)}
                       >
                         Me inscrever
