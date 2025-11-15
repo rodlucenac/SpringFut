@@ -127,7 +127,7 @@ export default function EditarPerfilPage() {
               <input
                 required
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500"
                 value={editPessoa.nome || ""}
                 onChange={(e) => setEditPessoa({ ...editPessoa, nome: e.target.value })}
                 disabled={salvando}
@@ -141,7 +141,7 @@ export default function EditarPerfilPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500"
                   value={editPessoa.telefoneDDD || ""}
                   onChange={(e) => setEditPessoa({ ...editPessoa, telefoneDDD: e.target.value })}
                   disabled={salvando}
@@ -154,7 +154,7 @@ export default function EditarPerfilPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500"
                   value={editPessoa.telefoneNumero || ""}
                   onChange={(e) => setEditPessoa({ ...editPessoa, telefoneNumero: e.target.value })}
                   disabled={salvando}
@@ -169,7 +169,7 @@ export default function EditarPerfilPage() {
               <input
                 required
                 type="email"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500"
                 value={editPessoa.email || ""}
                 onChange={(e) => setEditPessoa({ ...editPessoa, email: e.target.value })}
                 disabled={salvando}

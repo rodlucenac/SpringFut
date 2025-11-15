@@ -121,7 +121,7 @@ export default function NovaPeladaPage() {
               id="nome"
               type="text"
               placeholder="Ex: Futebol dos Amigos"
-              className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+              className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               disabled={loading}
@@ -136,7 +136,7 @@ export default function NovaPeladaPage() {
               id="endereco"
               type="text"
               placeholder="Rua, número, complemento"
-              className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+              className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
               value={endereco}
               onChange={(e) => setEndereco(e.target.value)}
               disabled={loading}
@@ -150,7 +150,7 @@ export default function NovaPeladaPage() {
               id="bairro"
               type="text"
               placeholder="Ex: Centro"
-              className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+              className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
               value={bairro}
               onChange={(e) => setBairro(e.target.value)}
               disabled={loading}
@@ -168,7 +168,7 @@ export default function NovaPeladaPage() {
                 id="diaSemana"
                 type="text"
                 placeholder="Ex: Sábado"
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+                className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
                 value={diaSemana}
                 onChange={(e) => setDiaSemana(e.target.value)}
                 disabled={loading}
@@ -181,7 +181,7 @@ export default function NovaPeladaPage() {
               <input
                 id="horario"
                 type="time"
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+                className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
                 value={horario}
                 onChange={(e) => setHorario(e.target.value)}
                 disabled={loading}
@@ -198,7 +198,7 @@ export default function NovaPeladaPage() {
             <input
               id="primeiraRodada"
               type="date"
-              className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+              className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
               value={primeiraRodada}
               onChange={(e) => setPrimeiraRodada(e.target.value)}
               disabled={loading}
@@ -213,7 +213,7 @@ export default function NovaPeladaPage() {
                 id="limite"
                 type="number"
                 placeholder="Máx: 50"
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+                className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
                 value={limite}
                 onChange={(e) => setLimite(Number(e.target.value))}
                 min={2}
@@ -229,7 +229,7 @@ export default function NovaPeladaPage() {
                 id="valor"
                 type="number"
                 placeholder="Ex: 200.00"
-                className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+                className="px-4 py-3 rounded-lg border border-gray-300 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition"
                 value={valor}
                 onChange={(e) => setValor(Number(e.target.value))}
                 min={0}

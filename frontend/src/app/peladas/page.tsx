@@ -661,7 +661,7 @@ export default function PeladasPage() {
                       </label>
                       <select
                         name="idRodada"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
                         value={form.idRodada}
                         onChange={handleFormChange}
                       >
@@ -677,7 +677,7 @@ export default function PeladasPage() {
                       </label>
                       <select
                         name="statusConfirmacao"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3 text-gray-800 placeholder-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
                         value={form.statusConfirmacao}
                         onChange={handleFormChange}
                       >
