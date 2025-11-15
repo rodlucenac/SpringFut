@@ -79,6 +79,17 @@ export default function PeladasPage() {
   const [feedback, setFeedback] = useState<
     { type: "success" | "error"; message: string } | null
   >(null);
+  const [inscricaoRecemCriada, setInscricaoRecemCriada] = useState<
+    Inscricao | null
+  >(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [inscricaoPagamento, setInscricaoPagamento] = useState<
+    Inscricao | null
+  >(null);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentFeedback, setPaymentFeedback] = useState<
+    { type: "success" | "error"; message: string } | null
+  >(null);
   const [form, setForm] = useState({
     idRodada: "",
     statusConfirmacao: "Pendente",
@@ -263,6 +274,13 @@ export default function PeladasPage() {
         throw new Error(body?.erro || "Erro ao salvar inscrição.");
       }
 
+      let novaInscricao: Inscricao | null = null;
+      if (!editingInscricao) {
+        novaInscricao = await response.json().catch(() => null);
+      } else {
+        await response.json().catch(() => null);
+      }
+
       setFeedback({
         type: "success",
         message: editingInscricao
@@ -270,12 +288,14 @@ export default function PeladasPage() {
           : "Inscrição criada com sucesso.",
       });
       await loadInscricaoData(selectedPelada.id, jogadorId);
+      setInscricaoRecemCriada(novaInscricao || null);
     } catch (error) {
       setFeedback({
         type: "error",
         message:
           error instanceof Error ? error.message : "Falha ao salvar inscrição.",
       });
+      setInscricaoRecemCriada(null);
     }
   };
 
@@ -286,6 +306,7 @@ export default function PeladasPage() {
       statusConfirmacao: inscricao.statusConfirmacao,
     });
     setFeedback(null);
+    setInscricaoRecemCriada(null);
   };
 
   const handleDelete = async (inscricaoId: number) => {
@@ -304,6 +325,7 @@ export default function PeladasPage() {
         message: "Inscrição removida.",
       });
       await loadInscricaoData(selectedPelada.id, parseInt(userId, 10));
+      setInscricaoRecemCriada(null);
     } catch (error) {
       setFeedback({
         type: "error",
@@ -319,6 +341,70 @@ export default function PeladasPage() {
     const rodada = rodadasDisponiveis.find((r) => r.idRodada === rodadaId);
     if (!rodada) return `Rodada ${rodadaId}`;
     return `Rodada ${rodada.idRodada} - ${formatDate(rodada.data)}`;
+  };
+
+  const abrirPagamento = (inscricao: Inscricao) => {
+    setInscricaoPagamento(inscricao);
+    setPaymentFeedback(null);
+    setPaymentModalOpen(true);
+  };
+
+  const confirmarPagamento = async () => {
+    if (!selectedPelada || !userId || !inscricaoPagamento) {
+      setPaymentFeedback({
+        type: "error",
+        message: "Selecione uma inscrição válida para pagar.",
+      });
+      return;
+    }
+    const valor = selectedPelada.valor || 0;
+    if (valor <= 0) {
+      setPaymentFeedback({
+        type: "error",
+        message: "Valor da pelada não configurado.",
+      });
+      return;
+    }
+
+    setPaymentProcessing(true);
+    try {
+      const response = await fetch("http://localhost:8080/api/pagamentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idJogador: parseInt(userId, 10),
+          idRodada: inscricaoPagamento.idRodada,
+          valor,
+          forma: "PIX",
+          status: "Pago",
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.erro || "Não foi possível registrar o pagamento.");
+      }
+      await response.json().catch(() => null);
+      setPaymentFeedback({
+        type: "success",
+        message: "Pagamento registrado com sucesso!",
+      });
+      await loadInscricaoData(selectedPelada.id, parseInt(userId, 10));
+      setTimeout(() => {
+        setPaymentModalOpen(false);
+        setInscricaoPagamento(null);
+        setPaymentFeedback(null);
+      }, 1200);
+    } catch (error) {
+      setPaymentFeedback({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro inesperado ao processar o pagamento.",
+      });
+    } finally {
+      setPaymentProcessing(false);
+    }
   };
 
   return (
@@ -525,6 +611,26 @@ export default function PeladasPage() {
                   </div>
                 )}
 
+                {feedback?.type === "success" && inscricaoRecemCriada && (
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border border-green-200 bg-green-50 px-4 py-3 rounded-lg">
+                    <div>
+                      <p className="text-sm text-green-700 font-semibold">
+                        Inscrição pronta para pagamento via PIX.
+                      </p>
+                      <p className="text-xs text-green-700">
+                        {getRodadaDescricao(inscricaoRecemCriada.idRodada)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+                      onClick={() => abrirPagamento(inscricaoRecemCriada)}
+                    >
+                      Ir para pagamento
+                    </button>
+                  </div>
+                )}
+
                 {rodadasDisponiveis.length === 0 ? (
                   <p className="text-center text-gray-500 py-6">
                     Esta pelada ainda não possui rodadas cadastradas. Entre em
@@ -622,7 +728,7 @@ export default function PeladasPage() {
                                     Resposta: {formatDate(inscricao.dataResposta)}
                                   </p>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap gap-2 justify-end">
                                   <button
                                     type="button"
                                     className="text-blue-600 hover:text-blue-800"
@@ -639,6 +745,13 @@ export default function PeladasPage() {
                                   >
                                     <FaTrash />
                                   </button>
+                                  <button
+                                    type="button"
+                                    className="px-3 py-1 border border-green-300 text-green-700 rounded-md text-xs font-semibold hover:bg-green-50"
+                                    onClick={() => abrirPagamento(inscricao)}
+                                  >
+                                    Ir para pagamento
+                                  </button>
                                 </div>
                               </div>
                             </li>
@@ -650,6 +763,87 @@ export default function PeladasPage() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de pagamento */}
+      {paymentModalOpen && selectedPelada && inscricaoPagamento && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-gray-500">Pagamento via PIX</p>
+                <h3 className="text-2xl font-bold text-gray-800">
+                  {selectedPelada.nome}
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  {getRodadaDescricao(inscricaoPagamento.idRodada)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700"
+                onClick={() => {
+                  setPaymentModalOpen(false);
+                  setInscricaoPagamento(null);
+                  setPaymentFeedback(null);
+                }}
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            {paymentFeedback && (
+              <div
+                className={`mb-4 px-4 py-2 rounded-lg text-sm ${
+                  paymentFeedback.type === "success"
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-red-50 text-red-700 border border-red-200"
+                }`}
+              >
+                {paymentFeedback.message}
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-500">Valor da pelada</p>
+                <p className="text-2xl font-bold text-gray-800">
+                  R$ {(selectedPelada.valor ?? 0).toFixed(2)}
+                </p>
+              </div>
+              <div className="border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-500">Forma de pagamento</p>
+                <p className="text-lg font-semibold text-gray-800">PIX</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Ao confirmar, registramos o pagamento e atualizamos sua inscrição para confirmado.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
+                onClick={() => {
+                  setPaymentModalOpen(false);
+                  setInscricaoPagamento(null);
+                  setPaymentFeedback(null);
+                }}
+                disabled={paymentProcessing}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60"
+                onClick={confirmarPagamento}
+                disabled={paymentProcessing}
+              >
+                {paymentProcessing ? "Processando..." : "Confirmar PIX"}
+              </button>
+            </div>
           </div>
         </div>
       )}
