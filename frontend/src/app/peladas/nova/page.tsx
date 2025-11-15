@@ -11,6 +11,7 @@ export default function NovaPeladaPage() {
   const [horario, setHorario] = useState("");
   const [limite, setLimite] = useState(20);
   const [valor, setValor] = useState(0);
+  const [primeiraRodada, setPrimeiraRodada] = useState("");
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,15 @@ export default function NovaPeladaPage() {
     e.preventDefault();
     setErro("");
     setSucesso("");
-    if (!nome || !endereco || !bairro || !diaSemana || !horario || !limite) {
+    if (
+      !nome ||
+      !endereco ||
+      !bairro ||
+      !diaSemana ||
+      !horario ||
+      !limite ||
+      !primeiraRodada
+    ) {
       setErro("Preencha todos os campos obrigatórios!");
       return;
     }
@@ -39,6 +48,7 @@ export default function NovaPeladaPage() {
           limiteMensalistas: limite,
           valorTotal: valor,
           organizadorId,
+          primeiraRodada,
         }),
       });
       if (!response.ok) {
@@ -177,6 +187,22 @@ export default function NovaPeladaPage() {
                 disabled={loading}
               />
             </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="primeiraRodada"
+              className="text-green-700 font-semibold"
+            >
+              Data da primeira rodada *
+            </label>
+            <input
+              id="primeiraRodada"
+              type="date"
+              className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-400 outline-none transition"
+              value={primeiraRodada}
+              onChange={(e) => setPrimeiraRodada(e.target.value)}
+              disabled={loading}
+            />
           </div>
           <div className="flex flex-col gap-1 md:flex-row md:gap-4">
             <div className="flex flex-col gap-1 md:w-1/2">

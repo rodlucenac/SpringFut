@@ -43,7 +43,7 @@ public class PessoaRepository {
                     p.setTelefoneDDD(rs.getString("telefoneDDD"));
                     p.setTelefoneNumero(rs.getString("telefoneNumero"));
                     p.setEmail(rs.getString("email"));
-                    // Não retornar senha por segurança
+                    
                     p.setSenha(null);
                     return p;
                 });

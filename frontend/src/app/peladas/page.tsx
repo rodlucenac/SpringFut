@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,6 +9,9 @@ import {
   FaMapMarkerAlt,
   FaCalendarAlt,
   FaUsers,
+  FaTimes,
+  FaEdit,
+  FaTrash,
 } from "react-icons/fa";
 
 interface Pelada {
@@ -25,7 +28,6 @@ interface Pelada {
   imagem?: string;
 }
 
-// Interface para dados vindos do backend
 interface PeladaBackend {
   idPelada: number;
   diaSemana: string;
@@ -40,11 +42,53 @@ interface PeladaBackend {
   };
 }
 
+interface RodadaOption {
+  idRodada: number;
+  data: string | null;
+}
+
+interface Inscricao {
+  idInscricao: number;
+  idJogador: number;
+  idRodada: number;
+  statusConfirmacao: string;
+  dataResposta?: string | null;
+}
+
+const STATUS_OPTIONS: Array<Inscricao["statusConfirmacao"]> = [
+  "Pendente",
+  "Confirmado",
+  "Ausente",
+];
+
 export default function PeladasPage() {
   const [peladas, setPeladas] = useState<Pelada[]>([]);
   const [busca, setBusca] = useState("");
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [selectedPelada, setSelectedPelada] = useState<Pelada | null>(null);
+  const [inscricaoModalOpen, setInscricaoModalOpen] = useState(false);
+  const [rodadasDisponiveis, setRodadasDisponiveis] = useState<RodadaOption[]>(
+    []
+  );
+  const [inscricoes, setInscricoes] = useState<Inscricao[]>([]);
+  const [inscricaoLoading, setInscricaoLoading] = useState(false);
+  const [editingInscricao, setEditingInscricao] = useState<Inscricao | null>(
+    null
+  );
+  const [feedback, setFeedback] = useState<
+    { type: "success" | "error"; message: string } | null
+  >(null);
+  const [form, setForm] = useState({
+    idRodada: "",
+    statusConfirmacao: "Pendente",
+  });
   const router = useRouter();
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("userId");
+    setUserId(storedUser);
+  }, []);
 
   useEffect(() => {
     fetch("http://localhost:8080/api/peladas")
@@ -79,6 +123,203 @@ export default function PeladasPage() {
       p.endereco.toLowerCase().includes(busca.toLowerCase()) ||
       p.bairro.toLowerCase().includes(busca.toLowerCase())
   );
+
+  const resetInscricaoForm = (rodadas?: RodadaOption[]) => {
+    setForm({
+      idRodada: rodadas && rodadas[0] ? String(rodadas[0].idRodada) : "",
+      statusConfirmacao: "Pendente",
+    });
+    setEditingInscricao(null);
+  };
+
+  const closeModal = () => {
+    setInscricaoModalOpen(false);
+    setSelectedPelada(null);
+    setRodadasDisponiveis([]);
+    setInscricoes([]);
+    resetInscricaoForm();
+    setFeedback(null);
+  };
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return "-";
+    return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
+  };
+
+  const loadInscricaoData = async (peladaId: number, jogador: number) => {
+    setInscricaoLoading(true);
+    try {
+      const [rodadasResp, inscricoesResp] = await Promise.all([
+        fetch(`http://localhost:8080/api/peladas/${peladaId}/rodadas`),
+        fetch(
+          `http://localhost:8080/api/inscricoes?idJogador=${encodeURIComponent(
+            jogador
+          )}`
+        ),
+      ]);
+
+      if (!rodadasResp.ok) {
+        throw new Error("Erro ao carregar rodadas da pelada.");
+      }
+      if (!inscricoesResp.ok) {
+        throw new Error("Erro ao carregar suas inscrições.");
+      }
+
+      const rodadasData: unknown = await rodadasResp.json();
+      const inscricoesData: unknown = await inscricoesResp.json();
+      const rodadasList: RodadaOption[] = Array.isArray(rodadasData)
+        ? (rodadasData as RodadaOption[])
+        : [];
+      const rodadasIds = new Set(rodadasList.map((r) => r.idRodada));
+      const inscricoesList: Inscricao[] = Array.isArray(inscricoesData)
+        ? (inscricoesData as Inscricao[])
+        : [];
+      const filtradas = inscricoesList.filter((insc) =>
+        rodadasIds.has(insc.idRodada)
+      );
+
+      setRodadasDisponiveis(rodadasList);
+      setInscricoes(filtradas);
+      resetInscricaoForm(rodadasList);
+      if (rodadasList.length === 0) {
+        setFeedback({
+          type: "error",
+          message: "Esta pelada ainda não possui rodadas cadastradas.",
+        });
+      }
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar as inscrições.",
+      });
+      setRodadasDisponiveis([]);
+      setInscricoes([]);
+    } finally {
+      setInscricaoLoading(false);
+    }
+  };
+
+  const handleInscreverClick = (pelada: Pelada) => {
+    if (!userId) {
+      router.push("/login");
+      return;
+    }
+    setSelectedPelada(pelada);
+    setInscricaoModalOpen(true);
+    setFeedback(null);
+    resetInscricaoForm();
+    loadInscricaoData(pelada.id, parseInt(userId, 10));
+  };
+
+  const handleFormChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!userId || !selectedPelada) {
+      setFeedback({
+        type: "error",
+        message: "É necessário estar logado para se inscrever.",
+      });
+      return;
+    }
+
+    if (!form.idRodada) {
+      setFeedback({
+        type: "error",
+        message: "Selecione uma rodada para se inscrever.",
+      });
+      return;
+    }
+
+    const jogadorId = parseInt(userId, 10);
+    const payload = {
+      idJogador: jogadorId,
+      idRodada: Number(form.idRodada),
+      statusConfirmacao: form.statusConfirmacao,
+    };
+
+    const url = editingInscricao
+      ? `http://localhost:8080/api/inscricoes/${editingInscricao.idInscricao}`
+      : "http://localhost:8080/api/inscricoes";
+    const method = editingInscricao ? "PUT" : "POST";
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.erro || "Erro ao salvar inscrição.");
+      }
+
+      setFeedback({
+        type: "success",
+        message: editingInscricao
+          ? "Inscrição atualizada com sucesso."
+          : "Inscrição criada com sucesso.",
+      });
+      await loadInscricaoData(selectedPelada.id, jogadorId);
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message:
+          error instanceof Error ? error.message : "Falha ao salvar inscrição.",
+      });
+    }
+  };
+
+  const handleEdit = (inscricao: Inscricao) => {
+    setEditingInscricao(inscricao);
+    setForm({
+      idRodada: String(inscricao.idRodada),
+      statusConfirmacao: inscricao.statusConfirmacao,
+    });
+    setFeedback(null);
+  };
+
+  const handleDelete = async (inscricaoId: number) => {
+    if (!selectedPelada || !userId) return;
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/inscricoes/${inscricaoId}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.erro || "Não foi possível excluir.");
+      }
+      setFeedback({
+        type: "success",
+        message: "Inscrição removida.",
+      });
+      await loadInscricaoData(selectedPelada.id, parseInt(userId, 10));
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro ao excluir a inscrição.",
+      });
+    }
+  };
+
+  const getRodadaDescricao = (rodadaId: number) => {
+    const rodada = rodadasDisponiveis.find((r) => r.idRodada === rodadaId);
+    if (!rodada) return `Rodada ${rodadaId}`;
+    return `Rodada ${rodada.idRodada} - ${formatDate(rodada.data)}`;
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
@@ -115,7 +356,14 @@ export default function PeladasPage() {
                 strokeLinejoin="round"
                 d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
               />
-              <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" fill="none"/>
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+                stroke="currentColor"
+                strokeWidth="2"
+                fill="none"
+              />
             </svg>
             Meu Perfil
           </button>
@@ -125,7 +373,10 @@ export default function PeladasPage() {
           >
             <FaPlus /> Criar Pelada
           </a>
-          <Link href="/graficos" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow transition">
+          <Link
+            href="/graficos"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow transition"
+          >
             Gráficos
           </Link>
         </div>
@@ -203,7 +454,7 @@ export default function PeladasPage() {
                         <div
                           className="h-full bg-green-500"
                           style={{
-                            width: `${(p.jogadores / p.limite) * 100}%`,
+                            width: `${p.limite ? (p.jogadores / p.limite) * 100 : 0}%`,
                           }}
                         />
                       </div>
@@ -217,12 +468,13 @@ export default function PeladasPage() {
                           por pessoa
                         </span>
                       </div>
-                      <a
-                        href={`/peladas/${p.id}`}
+                      <button
+                        type="button"
                         className="px-5 py-2 bg-green-50 border border-green-600 text-green-700 font-bold rounded-lg hover:bg-green-100 transition text-sm"
+                        onClick={() => handleInscreverClick(p)}
                       >
-                        Ver detalhes
-                      </a>
+                        Me inscrever
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -231,6 +483,176 @@ export default function PeladasPage() {
           )}
         </div>
       </section>
+
+      {/* Modal de inscrição */}
+      {inscricaoModalOpen && selectedPelada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-sm text-gray-500">Pelada selecionada</p>
+                <h3 className="text-2xl font-bold text-gray-800">
+                  {selectedPelada.nome}
+                </h3>
+                <p className="text-gray-500 text-sm">
+                  {selectedPelada.diaSemana} • {selectedPelada.horario}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="text-gray-500 hover:text-gray-700"
+                onClick={closeModal}
+              >
+                <FaTimes size={20} />
+              </button>
+            </div>
+
+            {inscricaoLoading ? (
+              <div className="text-center py-10 text-gray-500">
+                Carregando dados de inscrição...
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {feedback && (
+                  <div
+                    className={`px-4 py-3 rounded-lg text-sm ${
+                      feedback.type === "success"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
+                    }`}
+                  >
+                    {feedback.message}
+                  </div>
+                )}
+
+                {rodadasDisponiveis.length === 0 ? (
+                  <p className="text-center text-gray-500 py-6">
+                    Esta pelada ainda não possui rodadas cadastradas. Entre em
+                    contato com o organizador.
+                  </p>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <form
+                      className="p-4 border border-gray-200 rounded-xl bg-gray-50"
+                      onSubmit={handleSubmit}
+                    >
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                        {editingInscricao
+                          ? "Editar inscrição"
+                          : "Nova inscrição"}
+                      </h4>
+                      <label className="block text-sm font-semibold text-gray-600 mb-1">
+                        Rodada
+                      </label>
+                      <select
+                        name="idRodada"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3"
+                        value={form.idRodada}
+                        onChange={handleFormChange}
+                      >
+                        {rodadasDisponiveis.map((rodada) => (
+                          <option key={rodada.idRodada} value={rodada.idRodada}>
+                            {getRodadaDescricao(rodada.idRodada)}
+                          </option>
+                        ))}
+                      </select>
+
+                      <label className="block text-sm font-semibold text-gray-600 mb-1">
+                        Status
+                      </label>
+                      <select
+                        name="statusConfirmacao"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-3"
+                        value={form.statusConfirmacao}
+                        onChange={handleFormChange}
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="flex gap-3 mt-2">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-green-600 text-white font-semibold rounded-lg py-2 hover:bg-green-700 transition"
+                        >
+                          {editingInscricao ? "Atualizar" : "Inscrever"}
+                        </button>
+                        {editingInscricao && (
+                          <button
+                            type="button"
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100"
+                            onClick={() => {
+                              resetInscricaoForm(rodadasDisponiveis);
+                              setFeedback(null);
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+                    </form>
+
+                    <div className="p-4 border border-gray-200 rounded-xl">
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                        Minhas inscrições
+                      </h4>
+                      {inscricoes.length === 0 ? (
+                        <p className="text-gray-500 text-sm">
+                          Você ainda não se inscreveu nas rodadas desta pelada.
+                        </p>
+                      ) : (
+                        <ul className="space-y-3">
+                          {inscricoes.map((inscricao) => (
+                            <li
+                              key={inscricao.idInscricao}
+                              className="border border-gray-200 rounded-lg p-3 flex flex-col gap-2"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-semibold text-gray-800">
+                                    {getRodadaDescricao(inscricao.idRodada)}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    Status: {inscricao.statusConfirmacao}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    Resposta: {formatDate(inscricao.dataResposta)}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    className="text-blue-600 hover:text-blue-800"
+                                    onClick={() => handleEdit(inscricao)}
+                                  >
+                                    <FaEdit />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="text-red-600 hover:text-red-800"
+                                    onClick={() =>
+                                      handleDelete(inscricao.idInscricao)
+                                    }
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="w-full py-6 text-center text-gray-400 text-sm border-t mt-8">

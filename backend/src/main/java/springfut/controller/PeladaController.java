@@ -6,6 +6,8 @@ import springfut.repository.PeladaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,14 @@ public class PeladaController {
             int limiteMensalistas = (int) body.getOrDefault("limiteMensalistas", 20);
             double valorTotal = Double.parseDouble(body.getOrDefault("valorTotal", 0).toString());
             int organizadorId = Integer.parseInt(body.getOrDefault("organizadorId", 0).toString());
+            Object dataRodadaObj = body.getOrDefault("primeiraRodada", null);
+
+            LocalDate dataPrimeiraRodada;
+            if (dataRodadaObj instanceof String dataRodadaStr && !dataRodadaStr.isBlank()) {
+                dataPrimeiraRodada = LocalDate.parse(dataRodadaStr);
+            } else {
+                dataPrimeiraRodada = LocalDate.now();
+            }
 
             // 1. Criar endereço
             String sqlEndereco = "INSERT INTO Endereco (rua, bairro) VALUES (?, ?)";
@@ -45,6 +55,10 @@ public class PeladaController {
             // 3. Vincular organizador como admin da pelada
             String sqlVinculo = "INSERT INTO VinculoJogadorPelada (idJogador, idPelada, estrelas, tipoParticipacao, papelNaPelada) VALUES (?, ?, 5, 'Mensalista', 'Organizador')";
             jdbc.update(sqlVinculo, organizadorId, idPelada);
+
+            // 4. Criar ao menos uma rodada para a nova pelada
+            String sqlRodada = "INSERT INTO Rodada (idPelada, data) VALUES (?, ?)";
+            jdbc.update(sqlRodada, idPelada, Date.valueOf(dataPrimeiraRodada));
 
             return ResponseEntity.ok(Map.of("mensagem", "Pelada criada com sucesso!"));
         } catch (Exception e) {
@@ -160,6 +174,23 @@ public class PeladaController {
             System.err.println("Erro ao excluir pelada: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(400).body(Map.of("erro", "Erro ao excluir pelada: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}/rodadas")
+    public ResponseEntity<?> listarRodadas(@PathVariable int id) {
+        try {
+            String sql = "SELECT idRodada, data FROM Rodada WHERE idPelada = ? ORDER BY data";
+            List<Map<String, Object>> rodadas = jdbc.query(sql, ps -> ps.setInt(1, id), (rs, rowNum) -> {
+                Map<String, Object> rodada = new java.util.HashMap<>();
+                rodada.put("idRodada", rs.getInt("idRodada"));
+                java.sql.Date data = rs.getDate("data");
+                rodada.put("data", data != null ? data.toLocalDate() : null);
+                return rodada;
+            });
+            return ResponseEntity.ok(rodadas);
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("erro", "Erro ao listar rodadas: " + e.getMessage()));
         }
     }
 }
