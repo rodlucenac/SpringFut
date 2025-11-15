@@ -88,4 +88,39 @@ public class PessoaController {
             return ResponseEntity.status(500).body(Map.of("erro", "Erro ao excluir perfil: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/jogador/{idJogador}/classificacao")
+    public ResponseEntity<?> classificacaoPorJogador(@PathVariable int idJogador) {
+        try {
+            String sqlClassificacao = "SELECT fn_classificacao_assiduidade(?)";
+            String classificacao = jdbc.queryForObject(sqlClassificacao, String.class, idJogador);
+
+            Integer totalInscricoes = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM Inscricao WHERE idJogador = ?",
+                    Integer.class,
+                    idJogador
+            );
+
+            Integer confirmados = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM Inscricao WHERE idJogador = ? AND statusConfirmacao = 'Confirmado'",
+                    Integer.class,
+                    idJogador
+            );
+
+            double percentual = 0.0;
+            if (totalInscricoes != null && totalInscricoes > 0 && confirmados != null) {
+                percentual = (confirmados * 100.0) / totalInscricoes;
+            }
+
+            return ResponseEntity.ok(Map.of(
+                    "idJogador", idJogador,
+                    "classificacao", classificacao,
+                    "totalInscricoes", totalInscricoes != null ? totalInscricoes : 0,
+                    "confirmados", confirmados != null ? confirmados : 0,
+                    "percentualConfirmado", percentual
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("erro", "Erro ao consultar assiduidade: " + e.getMessage()));
+        }
+    }
 }

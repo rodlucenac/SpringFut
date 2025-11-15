@@ -437,7 +437,7 @@ export default function PeladasPage() {
           </button>
           <button
             className="text-blue-700 hover:text-blue-900 border border-blue-200 rounded px-3 py-1 bg-blue-50 text-sm font-semibold flex items-center gap-1"
-            onClick={() => router.push("/perfil/editar")}
+            onClick={() => router.push("/perfil")}
           >
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
               <path
