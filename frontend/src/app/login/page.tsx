@@ -54,7 +54,7 @@ export default function LoginPage() {
           <input
             type="email"
             placeholder="E-mail"
-            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
@@ -62,7 +62,7 @@ export default function LoginPage() {
           <input
             type="password"
             placeholder="Senha"
-            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             autoComplete="current-password"

@@ -48,22 +48,34 @@ export default function Home() {
 
       {/* Opções secundárias */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-14 w-full max-w-3xl">
-        <div className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition">
+        <a
+          href="/peladas"
+          className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition cursor-pointer"
+        >
           <FaUsers className="text-3xl mb-2 text-green-500" />
           <span className="font-medium">Organize times</span>
-        </div>
-        <div className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition">
-          <FaMapMarkerAlt className="text-3xl mb-2 text-green-500" />
-          <span className="font-medium">Encontre quadras</span>
-        </div>
-        <div className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition">
+        </a>
+        <a
+          href="/agenda"
+          className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition cursor-pointer"
+        >
           <FaCalendarAlt className="text-3xl mb-2 text-green-500" />
           <span className="font-medium">Agende jogos</span>
-        </div>
-        <div className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition">
+        </a>
+        <a
+          href="/ranking"
+          className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition cursor-pointer"
+        >
           <FaTrophy className="text-3xl mb-2 text-green-500" />
           <span className="font-medium">Acompanhe stats</span>
-        </div>
+        </a>
+        <a
+          href="/dashboard"
+          className="flex flex-col items-center p-5 bg-white rounded-xl shadow text-green-700 hover:bg-green-50 transition cursor-pointer"
+        >
+          <FaMapMarkerAlt className="text-3xl mb-2 text-green-500" />
+          <span className="font-medium">Dashboard</span>
+        </a>
       </div>
     </main>
   );

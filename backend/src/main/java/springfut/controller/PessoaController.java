@@ -1,5 +1,6 @@
 package springfut.controller;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import springfut.model.Pessoa;
@@ -121,6 +122,40 @@ public class PessoaController {
             ));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("erro", "Erro ao consultar assiduidade: " + e.getMessage()));
+        }
+    }
+
+    // ========== PROCEDIMENTO SQL: sp_atualizar_contato_pessoa ==========
+    
+    @PutMapping("/{id}/contato")
+    public ResponseEntity<?> atualizarContato(
+        @PathVariable int id,
+        @RequestBody Map<String, String> dados
+    ) {
+        try {
+            String sql = "CALL sp_atualizar_contato_pessoa(?, ?, ?, ?, ?)";
+            
+            jdbc.update(
+                sql,
+                id,
+                dados.get("nome"),
+                dados.get("telefoneDDD"),
+                dados.get("telefoneNumero"),
+                dados.get("email")
+            );
+            
+            return ResponseEntity.ok(Map.of(
+                "mensagem", "Contato atualizado com sucesso via procedure",
+                "idPessoa", id
+            ));
+            
+        } catch (DataAccessException e) {
+            if (e.getMessage().contains("Pessoa não encontrada")) {
+                return ResponseEntity.status(404)
+                    .body(Map.of("erro", "Pessoa não encontrada"));
+            }
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", "Erro ao atualizar contato: " + e.getMessage()));
         }
     }
 }

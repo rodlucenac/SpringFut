@@ -53,7 +53,7 @@ export default function RegisterPage() {
           <input
             type="text"
             placeholder="Nome completo"
-            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-700"
+            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-900"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             autoComplete="name"
@@ -62,7 +62,7 @@ export default function RegisterPage() {
           <input
             type="email"
             placeholder="E-mail"
-            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-700"
+            className="px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-900"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
@@ -72,7 +72,7 @@ export default function RegisterPage() {
             <input
               type="password"
               placeholder="Senha"
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-700"
+              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-900"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               autoComplete="new-password"
@@ -81,7 +81,7 @@ export default function RegisterPage() {
             <input
               type="password"
               placeholder="Confirmar senha"
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-700"
+              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 bg-gray-50 text-gray-900"
               value={confirmarSenha}
               onChange={(e) => setConfirmarSenha(e.target.value)}
               autoComplete="new-password"

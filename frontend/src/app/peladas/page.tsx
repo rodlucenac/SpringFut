@@ -414,10 +414,10 @@ export default function PeladasPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between px-8 py-6 border-b border-gray-200">
+      {/* Header simplificado - apenas título e ações específicas */}
+      <header className="flex items-center justify-between px-8 py-6 border-b border-gray-200 bg-white">
         <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">
-          FutSpring
+          Peladas
         </h1>
         <div className="flex gap-2">
           <button
@@ -435,41 +435,12 @@ export default function PeladasPage() {
             </svg>
             Minhas peladas
           </button>
-          <button
-            className="text-blue-700 hover:text-blue-900 border border-blue-200 rounded px-3 py-1 bg-blue-50 text-sm font-semibold flex items-center gap-1"
-            onClick={() => router.push("/perfil")}
-          >
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-              <path
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"
-              />
-              <circle
-                cx="12"
-                cy="7"
-                r="4"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-              />
-            </svg>
-            Meu Perfil
-          </button>
           <a
             href="/peladas/nova"
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg shadow transition"
           >
             <FaPlus /> Criar Pelada
           </a>
-          <Link
-            href="/graficos"
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow transition"
-          >
-            Gráficos
-          </Link>
         </div>
       </header>
       {/* Busca */}

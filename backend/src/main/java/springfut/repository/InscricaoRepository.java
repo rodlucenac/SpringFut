@@ -109,6 +109,18 @@ public class InscricaoRepository {
         return queryExiste("SELECT COUNT(*) FROM Rodada WHERE idRodada = ?", idRodada);
     }
 
+    public Inscricao buscarPorJogadorERodada(int idJogador, int idRodada) {
+        List<Inscricao> inscricoes = jdbc.query(
+                "SELECT * FROM Inscricao WHERE idJogador = ? AND idRodada = ?",
+                ps -> {
+                    ps.setInt(1, idJogador);
+                    ps.setInt(2, idRodada);
+                },
+                mapper
+        );
+        return inscricoes.isEmpty() ? null : inscricoes.get(0);
+    }
+
     private boolean queryExiste(String sql, Object... parametros) {
         Integer quantidade = jdbc.queryForObject(sql, Integer.class, parametros);
         return quantidade != null && quantidade > 0;

@@ -48,14 +48,25 @@ export default function EditarPerfilPage() {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
-    fetch(`http://localhost:8080/api/pessoas/jogador/${userId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editPessoa),
-    })
+    // Primeiro buscar o idPessoa do jogador
+    fetch(`http://localhost:8080/api/pessoas/jogador/${userId}`)
+      .then((res) => res.json())
+      .then((pessoaData: Pessoa) => {
+        // Atualizar usando o procedimento SQL
+        return fetch(`http://localhost:8080/api/pessoas/${pessoaData.idPessoa}/contato`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nome: editPessoa.nome,
+            telefoneDDD: editPessoa.telefoneDDD,
+            telefoneNumero: editPessoa.telefoneNumero,
+            email: editPessoa.email,
+          }),
+        });
+      })
       .then((res) => {
         if (!res.ok) throw new Error("Erro ao salvar");
-        setSucesso("Perfil atualizado com sucesso!");
+        setSucesso("Contato atualizado com sucesso via procedure!");
         if (pessoa) {
           setPessoa({ ...pessoa, ...editPessoa });
         }

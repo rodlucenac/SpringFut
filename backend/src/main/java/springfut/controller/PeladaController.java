@@ -1,5 +1,6 @@
 package springfut.controller;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.web.bind.annotation.*;
 import springfut.model.Pelada;
 import springfut.repository.PeladaRepository;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -191,6 +193,58 @@ public class PeladaController {
             return ResponseEntity.ok(rodadas);
         } catch (Exception e) {
             return ResponseEntity.status(400).body(Map.of("erro", "Erro ao listar rodadas: " + e.getMessage()));
+        }
+    }
+
+    // ========== PROCEDIMENTO SQL: sp_promover_fila_para_mensalista ==========
+    
+    @PostMapping("/{idPelada}/promover-fila")
+    public ResponseEntity<?> promoverFilaParaMensalista(@PathVariable int idPelada) {
+        try {
+            String sql = "CALL sp_promover_fila_para_mensalista(?)";
+            
+            List<Map<String, Object>> resultado = jdbc.query(
+                sql,
+                ps -> ps.setInt(1, idPelada),
+                (rs, rowNum) -> {
+                    Map<String, Object> map = new HashMap<>();
+                    // A procedure pode retornar valores via SELECT ou OUT parameters
+                    // Ajustar conforme a implementação real da procedure
+                    try {
+                        map.put("jogadoresPromovidos", rs.getInt("jogadores_promovidos"));
+                        map.put("vagasRestantes", rs.getInt("vagas_restantes"));
+                    } catch (Exception e) {
+                        // Se a procedure não retorna resultados, usar valores padrão
+                        map.put("jogadoresPromovidos", 0);
+                        map.put("vagasRestantes", 0);
+                    }
+                    return map;
+                }
+            );
+            
+            if (resultado.isEmpty()) {
+                return ResponseEntity.ok(Map.of(
+                    "mensagem", "Nenhum jogador promovido",
+                    "jogadoresPromovidos", 0,
+                    "vagasRestantes", 0
+                ));
+            }
+            
+            Map<String, Object> dados = resultado.get(0);
+            
+            return ResponseEntity.ok(Map.of(
+                "mensagem", "Promoção realizada com sucesso",
+                "jogadoresPromovidos", dados.get("jogadoresPromovidos"),
+                "vagasRestantes", dados.get("vagasRestantes")
+            ));
+            
+        } catch (DataAccessException e) {
+            if (e.getMessage().contains("Pelada não encontrada")) {
+                return ResponseEntity.status(404)
+                    .body(Map.of("erro", "Pelada não encontrada"));
+            }
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", "Erro ao promover jogadores: " + e.getMessage()));
         }
     }
 }

@@ -6,6 +6,7 @@ import springfut.model.Inscricao;
 import springfut.repository.InscricaoRepository;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,6 +134,45 @@ public class InscricaoController {
             inscricao.setDataResposta(LocalDate.now());
         } else {
             inscricao.setDataResposta(existente.getDataResposta());
+        }
+    }
+
+    // ========== TRIGGER: trg_inscricao_status_resposta ==========
+    
+    @GetMapping("/demonstrar-trigger")
+    public ResponseEntity<?> demonstrarTrigger() {
+        return ResponseEntity.ok(Map.of(
+            "trigger", "trg_inscricao_status_resposta",
+            "descricao", "Atualiza automaticamente a dataResposta quando o status muda",
+            "tipo", "BEFORE UPDATE",
+            "tabela", "Inscricao",
+            "regras", Arrays.asList(
+                "Se status = 'Pendente' → dataResposta = NULL",
+                "Se status mudou → dataResposta = CURDATE()"
+            ),
+            "efeito", "Garante consistência: dataResposta só existe para status confirmado/ausente",
+            "exemplo", "Ao mudar de Pendente para Confirmado, a data é preenchida automaticamente"
+        ));
+    }
+
+    @GetMapping("/{id}/historico-status")
+    public ResponseEntity<?> getHistoricoStatus(@PathVariable int id) {
+        try {
+            Inscricao inscricao = repo.buscarPorId(id);
+            
+            if (inscricao == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            return ResponseEntity.ok(Map.of(
+                "inscricao", inscricao,
+                "explicacao", "A dataResposta foi atualizada automaticamente pelo trigger quando o status mudou",
+                "trigger", "trg_inscricao_status_resposta"
+            ));
+            
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", e.getMessage()));
         }
     }
 }
