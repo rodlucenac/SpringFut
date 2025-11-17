@@ -2,26 +2,20 @@ USE springFut;
 
 DELIMITER $$
 
--- Tabela de log para acompanhar movimentações financeiras.
-CREATE TABLE IF NOT EXISTS PagamentoLog (
-    idLog INT AUTO_INCREMENT PRIMARY KEY,
-    idPagamento INT NOT NULL,
-    idJogador INT,
-    idRodada INT,
-    valor DECIMAL(10,2),
-    status ENUM('Pago','Pendente','Atrasado'),
-    dataEvento DATETIME DEFAULT CURRENT_TIMESTAMP,
-    observacao VARCHAR(255)
-)$$
-
--- Trigger 1: registra cada novo pagamento na tabela de log para auditoria financeira.
+-- Trigger 1: Demonstração de trigger AFTER INSERT na tabela Pagamento.
+-- Nota: A auditoria de pagamentos é feita diretamente consultando a tabela Pagamento,
+-- não sendo necessária uma tabela de log separada, pois a tabela Pagamento já contém
+-- todas as informações necessárias para auditoria financeira.
 DROP TRIGGER IF EXISTS trg_pagamento_insert_log$$
 CREATE TRIGGER trg_pagamento_insert_log
 AFTER INSERT ON Pagamento
 FOR EACH ROW
 BEGIN
-    INSERT INTO PagamentoLog (idPagamento, idJogador, idRodada, valor, status, observacao)
-    VALUES (NEW.idPagamento, NEW.idJogador, NEW.idRodada, NEW.valor, NEW.status, 'Pagamento registrado');
+    -- Trigger criado para demonstração. A auditoria é feita consultando
+    -- diretamente a tabela Pagamento, que já contém todos os dados necessários.
+    -- Este trigger pode ser usado para validações adicionais ou notificações.
+    -- Exemplo: Poderia enviar notificação, validar regras de negócio, etc.
+    SET @trigger_executado = 1;
 END$$
 
 -- Trigger 2: garante que toda atualização de status de inscrição ajuste a data de resposta.

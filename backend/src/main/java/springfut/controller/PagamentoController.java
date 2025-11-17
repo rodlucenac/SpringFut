@@ -142,6 +142,7 @@ public class PagamentoController {
     }
 
     // ========== TRIGGER: trg_pagamento_insert_log ==========
+    // Auditoria de pagamentos consultando diretamente a tabela Pagamento
     
     @GetMapping("/logs")
     public ResponseEntity<?> listarLogsAuditoria(
@@ -149,22 +150,37 @@ public class PagamentoController {
         @RequestParam(required = false) Integer idRodada
     ) {
         try {
+            // Consulta diretamente a tabela Pagamento para auditoria
+            // Não é necessária tabela PagamentoLog, pois Pagamento já contém todos os dados
             StringBuilder sql = new StringBuilder(
-                "SELECT * FROM PagamentoLog WHERE 1=1"
+                "SELECT " +
+                "p.idPagamento, " +
+                "p.idJogador, " +
+                "p.idRodada, " +
+                "p.valor, " +
+                "p.status, " +
+                "p.forma, " +
+                "p.data, " +
+                "CONCAT(pe.nome, ' - ', r.data) AS observacao " +
+                "FROM Pagamento p " +
+                "LEFT JOIN Jogador j ON j.idJogador = p.idJogador " +
+                "LEFT JOIN Pessoa pe ON pe.idPessoa = j.idPessoa " +
+                "LEFT JOIN Rodada r ON r.idRodada = p.idRodada " +
+                "WHERE 1=1"
             );
             List<Object> params = new ArrayList<>();
             
             if (idJogador != null) {
-                sql.append(" AND idJogador = ?");
+                sql.append(" AND p.idJogador = ?");
                 params.add(idJogador);
             }
             
             if (idRodada != null) {
-                sql.append(" AND idRodada = ?");
+                sql.append(" AND p.idRodada = ?");
                 params.add(idRodada);
             }
             
-            sql.append(" ORDER BY dataEvento DESC");
+            sql.append(" ORDER BY p.data DESC, p.idPagamento DESC");
             
             List<Map<String, Object>> logs = jdbc.query(
                 sql.toString(),
@@ -175,14 +191,21 @@ public class PagamentoController {
                 },
                 (rs, rowNum) -> {
                     Map<String, Object> log = new HashMap<>();
-                    log.put("idLog", rs.getInt("idLog"));
+                    log.put("idLog", rs.getInt("idPagamento")); // Usando idPagamento como idLog para compatibilidade
                     log.put("idPagamento", rs.getInt("idPagamento"));
                     log.put("idJogador", rs.getInt("idJogador"));
                     log.put("idRodada", rs.getInt("idRodada"));
                     log.put("valor", rs.getBigDecimal("valor"));
                     log.put("status", rs.getString("status"));
-                    log.put("dataEvento", rs.getTimestamp("dataEvento"));
-                    log.put("observacao", rs.getString("observacao"));
+                    log.put("forma", rs.getString("forma"));
+                    // Converter data para timestamp para compatibilidade com frontend
+                    java.sql.Date dataSql = rs.getDate("data");
+                    if (dataSql != null) {
+                        log.put("dataEvento", java.sql.Timestamp.valueOf(dataSql.toLocalDate().atStartOfDay()));
+                    } else {
+                        log.put("dataEvento", null);
+                    }
+                    log.put("observacao", rs.getString("observacao") != null ? rs.getString("observacao") : "Pagamento registrado");
                     return log;
                 }
             );
@@ -191,7 +214,7 @@ public class PagamentoController {
             
         } catch (Exception e) {
             return ResponseEntity.status(500)
-                .body(Map.of("erro", "Erro ao buscar logs: " + e.getMessage()));
+                .body(Map.of("erro", "Erro ao buscar auditoria de pagamentos: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())));
         }
     }
 
@@ -199,11 +222,11 @@ public class PagamentoController {
     public ResponseEntity<?> demonstrarTrigger() {
         return ResponseEntity.ok(Map.of(
             "trigger", "trg_pagamento_insert_log",
-            "descricao", "Registra automaticamente cada novo pagamento na tabela PagamentoLog",
+            "descricao", "Trigger AFTER INSERT na tabela Pagamento (demonstração)",
             "tipo", "AFTER INSERT",
             "tabela", "Pagamento",
-            "efeito", "Auditoria financeira automática",
-            "exemplo", "Ao criar um pagamento, um registro de log é criado automaticamente",
+            "efeito", "Pode ser usado para validações adicionais ou notificações",
+            "auditoria", "A auditoria de pagamentos é feita consultando diretamente a tabela Pagamento, que já contém todos os dados necessários",
             "visualizacao", "GET /api/pagamentos/logs"
         ));
     }
