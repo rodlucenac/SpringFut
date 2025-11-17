@@ -1,10 +1,5 @@
 package springfut.controller;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import springfut.repository.ConsultaRepository;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -12,6 +7,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import springfut.repository.ConsultaRepository;
 
 @RestController
 @RequestMapping("/api/consultas")
@@ -114,22 +119,45 @@ public class ConsultaController {
         @RequestParam(required = false) String dataFim
     ) {
         try {
+            // Primeiro, verificar se a view existe
+            try {
+                jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.views WHERE table_schema = DATABASE() AND table_name = 'vw_agenda_peladas_organizadores'", Integer.class);
+            } catch (Exception e) {
+                // Se não conseguir verificar, tentar usar a view diretamente
+            }
+            
+            // Usar a query direta da view, mas com tratamento melhor de erros
             StringBuilder sql = new StringBuilder(
-                "SELECT * FROM vw_agenda_peladas_organizadores WHERE 1=1"
+                "SELECT r.idRodada, r.`data`, pe.diaSemana, pe.horario, pe.valorTotal, " +
+                "e.rua, e.bairro, " +
+                "p_org.nome AS nomeOrganizador, " +
+                "CONCAT_WS(' ', p_org.telefoneDDD, p_org.telefoneNumero) AS contatoOrganizador, " +
+                "COUNT(DISTINCT CASE WHEN i.statusConfirmacao = 'Confirmado' THEN i.idJogador END) AS confirmados, " +
+                "COUNT(DISTINCT CASE WHEN i.statusConfirmacao = 'Pendente' THEN i.idJogador END) AS pendentes, " +
+                "COUNT(DISTINCT CASE WHEN i.statusConfirmacao = 'Ausente' THEN i.idJogador END) AS ausentes " +
+                "FROM Rodada r " +
+                "JOIN Pelada pe ON pe.idPelada = r.idPelada " +
+                "LEFT JOIN Endereco e ON e.idEndereco = pe.idEndereco " +
+                "LEFT JOIN VinculoJogadorPelada v_org ON v_org.idPelada = pe.idPelada AND v_org.papelNaPelada = 'Organizador' " +
+                "LEFT JOIN Jogador j_org ON j_org.idJogador = v_org.idJogador " +
+                "LEFT JOIN Pessoa p_org ON p_org.idPessoa = j_org.idPessoa " +
+                "LEFT JOIN Inscricao i ON i.idRodada = r.idRodada " +
+                "WHERE 1=1"
             );
             List<Object> params = new ArrayList<>();
             
             if (dataInicio != null) {
-                sql.append(" AND data >= ?");
+                sql.append(" AND r.`data` >= ?");
                 params.add(LocalDate.parse(dataInicio));
             }
             
             if (dataFim != null) {
-                sql.append(" AND data <= ?");
+                sql.append(" AND r.`data` <= ?");
                 params.add(LocalDate.parse(dataFim));
             }
             
-            sql.append(" ORDER BY data, horario");
+            sql.append(" GROUP BY r.idRodada, r.`data`, pe.diaSemana, pe.horario, pe.valorTotal, " +
+                       "e.rua, e.bairro, p_org.nome, p_org.telefoneDDD, p_org.telefoneNumero");
             
             List<Map<String, Object>> agenda = jdbc.query(
                 sql.toString(),
@@ -160,11 +188,36 @@ public class ConsultaController {
                 }
             );
             
+            // Ordenar em Java por data e horário
+            agenda.sort((a, b) -> {
+                String dataA = (String) a.get("data");
+                String dataB = (String) b.get("data");
+                if (dataA != null && dataB != null) {
+                    int dataCompare = dataA.compareTo(dataB);
+                    if (dataCompare != 0) return dataCompare;
+                }
+                String horarioA = (String) a.get("horario");
+                String horarioB = (String) b.get("horario");
+                if (horarioA != null && horarioB != null) {
+                    return horarioA.compareTo(horarioB);
+                }
+                return 0;
+            });
+            
             return ResponseEntity.ok(agenda);
             
+        } catch (org.springframework.dao.DataAccessException e) {
+            String errorMsg = e.getMessage();
+            if (errorMsg != null && (errorMsg.contains("doesn't exist") || errorMsg.contains("Unknown table"))) {
+                return ResponseEntity.status(500)
+                    .body(Map.of("erro", "A view 'vw_agenda_peladas_organizadores' não existe no banco de dados. " +
+                          "Por favor, execute o script sql_visoes.sql para criar as views necessárias."));
+            }
+            return ResponseEntity.status(500)
+                .body(Map.of("erro", "Erro ao buscar agenda: " + (errorMsg != null ? errorMsg : e.getClass().getSimpleName())));
         } catch (Exception e) {
             return ResponseEntity.status(500)
-                .body(Map.of("erro", "Erro ao buscar agenda: " + e.getMessage()));
+                .body(Map.of("erro", "Erro ao buscar agenda: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())));
         }
     }
 

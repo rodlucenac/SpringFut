@@ -18,12 +18,37 @@ interface Jogador {
 export default function RankingPage() {
   const [ranking, setRanking] = useState<Jogador[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     fetch("http://localhost:8080/api/consultas/ranking-jogadores")
-      .then(res => res.json())
+      .then(async res => {
+        const data = await res.json();
+        
+        if (!res.ok) {
+          const errorMessage = data?.erro || data?.message || `Erro ${res.status}: ${res.statusText}`;
+          throw new Error(errorMessage);
+        }
+        
+        return data;
+      })
       .then(data => {
-        setRanking(data);
+        // Garantir que data é sempre um array
+        if (Array.isArray(data)) {
+          setRanking(data);
+        } else if (data && typeof data === 'object' && data.erro) {
+          setError(data.erro || "Erro desconhecido");
+          setRanking([]);
+        } else {
+          console.warn("Resposta inesperada da API:", data);
+          setRanking([]);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Erro ao carregar ranking:", err);
+        setError(err.message || "Erro ao carregar ranking. Verifique se o backend está rodando.");
+        setRanking([]);
         setLoading(false);
       });
   }, []);
@@ -71,7 +96,19 @@ export default function RankingPage() {
         </div>
         
         {loading ? (
-          <div>Carregando ranking...</div>
+          <div className="text-center py-8">
+            <div className="text-gray-600">Carregando ranking...</div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="text-red-800 font-semibold mb-2">Erro</div>
+            <div className="text-red-600">{error}</div>
+          </div>
+        ) : ranking.length === 0 ? (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
+            <div className="text-gray-600 text-lg mb-2">Nenhum jogador encontrado</div>
+            <div className="text-gray-500 text-sm">Não há jogadores no ranking no momento.</div>
+          </div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <table className="min-w-full">
@@ -136,17 +173,17 @@ export default function RankingPage() {
                       <div className="flex items-center justify-center gap-1">
                         <span className="text-yellow-500">★</span>
                         <span className="font-semibold">
-                          {jogador.estrelas.toFixed(1)}
+                          {(jogador.estrelas ?? 0).toFixed(1)}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="text-sm">
                         <div className="font-semibold">
-                          {jogador.percentualPresenca.toFixed(0)}%
+                          {(jogador.percentualPresenca ?? 0).toFixed(0)}%
                         </div>
                         <div className="text-xs text-gray-500">
-                          {jogador.presencas}/{jogador.inscricoes}
+                          {jogador.presencas || 0}/{jogador.inscricoes || 0}
                         </div>
                       </div>
                     </td>

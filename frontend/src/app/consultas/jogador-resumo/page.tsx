@@ -7,6 +7,7 @@ import { BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiu
 export default function JogadorResumoPage() {
   const [resumos, setResumos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
   const [filtroJogador, setFiltroJogador] = useState("");
 
   useEffect(() => {
@@ -15,17 +16,52 @@ export default function JogadorResumoPage() {
       : "http://localhost:8080/api/consultas/views/jogador-resumo";
     
     fetch(url)
-      .then(res => res.json())
+      .then(async res => {
+        const data = await res.json();
+        
+        if (!res.ok) {
+          const errorMessage = data?.erro || data?.message || `Erro ${res.status}: ${res.statusText}`;
+          throw new Error(errorMessage);
+        }
+        
+        return data;
+      })
       .then(data => {
-        setResumos(data);
+        // Garantir que data é sempre um array
+        if (Array.isArray(data)) {
+          setResumos(data);
+        } else if (data && typeof data === 'object' && data.erro) {
+          setError(data.erro || "Erro desconhecido");
+          setResumos([]);
+        } else {
+          console.warn("Resposta inesperada da API:", data);
+          setResumos([]);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Erro ao carregar resumos:", err);
+        setError(err.message || "Erro ao carregar resumos. Verifique se o backend está rodando.");
+        setResumos([]);
         setLoading(false);
       });
   }, [filtroJogador]);
 
-  if (loading) return <div>Carregando...</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-7xl mx-auto text-center py-12">
+          <div className="text-gray-600">Carregando resumos...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Garantir que resumos é sempre um array
+  const resumosArray = Array.isArray(resumos) ? resumos : [];
 
   // Dados para gráfico de desempenho
-  const desempenhoData = resumos.slice(0, 10).map(r => ({
+  const desempenhoData = resumosArray.slice(0, 10).map(r => ({
     nome: r.nome,
     gols: r.totalGols || 0,
     assistencias: r.totalAssistencias || 0,
@@ -33,7 +69,7 @@ export default function JogadorResumoPage() {
   }));
 
   // Dados para gráfico financeiro
-  const financeiroData = resumos.slice(0, 10).map(r => ({
+  const financeiroData = resumosArray.slice(0, 10).map(r => ({
     nome: r.nome,
     pago: parseFloat(r.totalPago || 0),
     pendente: parseFloat(r.totalPendente || 0),
@@ -80,8 +116,26 @@ export default function JogadorResumoPage() {
           </div>
         </div>
 
-        {/* Gráficos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6 text-center">
+            <div className="text-red-800 font-semibold mb-2">Erro</div>
+            <div className="text-red-600">{error}</div>
+          </div>
+        )}
+
+        {!error && resumosArray.length === 0 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 mb-6 text-center">
+            <div className="text-gray-600 text-lg mb-2">Nenhum jogador encontrado</div>
+            <div className="text-gray-500 text-sm">
+              {filtroJogador ? "Nenhum jogador encontrado com o ID informado." : "Não há jogadores cadastrados no momento."}
+            </div>
+          </div>
+        )}
+
+        {!error && resumosArray.length > 0 && (
+          <>
+            {/* Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Top 10 - Desempenho</h2>
             <ResponsiveContainer width="100%" height={300}>
@@ -133,7 +187,7 @@ export default function JogadorResumoPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {resumos.map((resumo) => (
+                {resumosArray.map((resumo) => (
                   <tr key={resumo.idJogador} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -187,6 +241,8 @@ export default function JogadorResumoPage() {
             </table>
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
