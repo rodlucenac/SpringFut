@@ -531,7 +531,6 @@ export default function PeladasPage() {
                           R$ {p.valor.toFixed(2)}
                         </span>
                         <span className="text-gray-400 text-sm ml-1">
-                          por pessoa
                         </span>
                       </div>
                       <button
