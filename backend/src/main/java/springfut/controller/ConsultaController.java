@@ -323,4 +323,26 @@ public class ConsultaController {
                 .body(Map.of("erro", "Erro ao buscar resumos: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName())));
         }
     }
+
+    // ========== CONSULTAS DO ARQUIVO 4_consultas.sql ==========
+
+    @GetMapping("/peladas-sem-organizador")
+    public List<Map<String,Object>> peladasSemOrganizador() { 
+        return repo.peladasSemOrganizador(); 
+    }
+
+    @GetMapping("/perfis-jogador-organizador")
+    public List<Map<String,Object>> perfisJogadorOrganizador() { 
+        return repo.perfisJogadorOrganizador(); 
+    }
+
+    @GetMapping("/jogadores-acima-media-avaliacao")
+    public List<Map<String,Object>> jogadoresAcimaMediaAvaliacao() { 
+        return repo.jogadoresAcimaMediaAvaliacao(); 
+    }
+
+    @GetMapping("/peladas-acima-media-arrecadada")
+    public List<Map<String,Object>> peladasAcimaMediaArrecadada() { 
+        return repo.peladasAcimaMediaArrecadada(); 
+    }
 }

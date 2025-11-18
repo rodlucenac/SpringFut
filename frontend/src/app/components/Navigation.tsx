@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { 
   FaFutbol, FaUsers, FaChartBar, FaCalendarAlt, 
   FaTrophy, FaFileInvoiceDollar, FaShieldAlt, FaHome,
-  FaSearch, FaChartLine, FaDollarSign, FaUser
+  FaSearch, FaChartLine, FaDollarSign, FaUser, FaExclamationTriangle
 } from "react-icons/fa";
 
 export default function Navigation() {
@@ -165,6 +165,31 @@ export default function Navigation() {
                     <div className="flex items-center gap-2">
                       <FaUser className="text-cyan-500" />
                       <span>Resumo dos Jogadores</span>
+                    </div>
+                  </Link>
+                  <div className="border-t border-gray-200 my-2"></div>
+                  <Link href="/consultas/peladas-sem-organizador" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <div className="flex items-center gap-2">
+                      <FaExclamationTriangle className="text-red-500" />
+                      <span>Peladas sem Organizador</span>
+                    </div>
+                  </Link>
+                  <Link href="/consultas/perfis-jogador-organizador" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <div className="flex items-center gap-2">
+                      <FaUsers className="text-indigo-500" />
+                      <span>Perfis Jogador/Organizador</span>
+                    </div>
+                  </Link>
+                  <Link href="/consultas/jogadores-acima-media-avaliacao" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <div className="flex items-center gap-2">
+                      <FaTrophy className="text-yellow-500" />
+                      <span>Jogadores Acima da Média</span>
+                    </div>
+                  </Link>
+                  <Link href="/consultas/peladas-acima-media-arrecadada" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <div className="flex items-center gap-2">
+                      <FaChartLine className="text-cyan-500" />
+                      <span>Peladas Acima da Média</span>
                     </div>
                   </Link>
                 </div>
